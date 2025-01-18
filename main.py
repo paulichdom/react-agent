@@ -16,11 +16,6 @@ chat_completion = client.chat.completions.create(
 
 result = chat_completion.choices[0].message.content
 
-print('# --- Test agent --- #\n')
-print(result)
-
-print('\n# --- Instantiate agent --- #\n')
-
 class Agent:
     def __init__(self, system=""):
         self.system = system
@@ -102,6 +97,49 @@ next_prompt = "Observation: {}".format(result)
 abot(next_prompt)
 messages = abot.messages
 
-print('\n# --- Messages --- #\n')
-for item in messages:
-    print(f"{item['role'].capitalize()}:\n{item['content']}\n")
+abot = Agent(prompt)
+
+question = """I have 2 dogs, a border collie and a scottish terrier. \
+What is their combined weight"""
+abot(question)
+
+next_prompt = "Observation: {}".format(average_dog_weight("Border Collie"))
+# print(next_prompt)
+
+abot(next_prompt)
+
+next_prompt = "Observation: {}".format(eval("37 + 20"))
+# print(next_prompt)
+
+abot(next_prompt)
+
+action_re = re.compile('^Action: (\w+): (.*)$')   # python regular expression to selection action
+
+def query(question, max_turns=5):
+    i = 0
+    bot = Agent(prompt)
+    next_prompt = question
+    while i < max_turns:
+        i += 1
+        result = bot(next_prompt)
+        print(result)
+        actions = [
+            action_re.match(a) 
+            for a in result.split('\n') 
+            if action_re.match(a)
+        ]
+        if actions:
+            # There is an action to run
+            action, action_input = actions[0].groups()
+            if action not in known_actions:
+                raise Exception("Unknown action: {}: {}".format(action, action_input))
+            print(" -- running {} {}".format(action, action_input))
+            observation = known_actions[action](action_input)
+            print("Observation:", observation)
+            next_prompt = "Observation: {}".format(observation)
+        else:
+            return
+        
+question = """I have 2 dogs, a border collie and a scottish terrier. \
+What is their combined weight"""
+query(question)
